@@ -4,7 +4,17 @@
   "version": "1.0.0",
   "description": "Hover any financial table to instantly calculate compound annual growth rates (CAGR) and median values for each row, with results surfaced in a convenient popup dashboard.",
   "permissions": ["scripting", "activeTab", "storage"],
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
   "action": {
+    "default_icon": {
+      "16": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+    },
     "default_popup": "popup.html"
   }
 }

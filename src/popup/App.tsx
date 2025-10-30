@@ -73,6 +73,12 @@ function useContentScriptInjection(): InjectionMessage {
 function App() {
   const injection = useContentScriptInjection();
   const [hoverDetails, setHoverDetails] = useState<HoverDetails | null>(null);
+  const iconSrc = useMemo(() => {
+    if (typeof chrome !== 'undefined' && chrome.runtime?.getURL) {
+      return chrome.runtime.getURL('icon.png');
+    }
+    return undefined;
+  }, []);
 
   useEffect(() => {
     if (!('chrome' in window) || !chrome.storage?.local) {
@@ -176,24 +182,29 @@ function App() {
   };
 
   return (
-    <div className="flex w-80 flex-col gap-6 bg-slate-900/80 px-6 py-6 shadow-xl shadow-black/30">
-      <header>
-        <h1 className="text-lg font-semibold tracking-tight text-slate-100">
-          Hover to analyze
-        </h1>
-        <p className="text-sm text-slate-300">
-          Move your cursor across any financial table row to see its median and compound growth rate instantly.
-        </p>
-        {injection.status === 'injecting' && (
-          <p className="mt-2 text-xs text-slate-400">Preparing tools…</p>
-        )}
-        {injection.status === 'error' && (
-          <p className="mt-2 text-xs text-rose-300">
-            Could not connect ({injection.error ?? 'unknown error'}).
-          </p>
-        )}
+    <div className="flex w-80 flex-col bg-slate-950 text-slate-100 shadow-xl shadow-black/30">
+      <header className="flex items-center justify-between border-b border-slate-800/70 px-5 py-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 shadow-inner shadow-black/40 ring-1 ring-slate-700/60">
+            {iconSrc ? (
+              <img src={iconSrc} alt="Extension icon" className="h-7 w-7" />
+            ) : (
+              <span className="text-lg font-semibold">FG</span>
+            )}
+          </div>
+          <div className="leading-tight">
+            <h1 className="text-lg font-semibold tracking-tight text-white">Financial Growth Metrics</h1>
+            <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-emerald-200/80">
+              Hover for CAGR & median
+            </p>
+          </div>
+        </div>
       </header>
-      <section className="bg-slate-900/70 p-4">
+      <div className="flex flex-col gap-5 px-6 py-5">
+        <p className="text-sm text-slate-300">
+          Hover across any financial table row to capture the latest median and compound growth rates in real time.
+        </p>
+        <section className="bg-slate-900/60 p-4">
         <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
           Latest selection
         </p>
@@ -238,7 +249,13 @@ function App() {
             Hover a table row to populate the latest metrics.
           </p>
         )}
-      </section>
+        </section>
+        {injection.status === 'error' && (
+          <p className="text-xs text-rose-300/90">
+            Could not connect ({injection.error ?? 'unknown error'}). Try refreshing the target tab and reopening this popup.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
