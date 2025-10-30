@@ -3,14 +3,6 @@
     return value.trim() !== '' && !Number.isNaN(Number(value)) && Number.isFinite(Number(value));
   }
 
-  function createTooltip(text: string): HTMLDivElement {
-    const tooltip = document.createElement('div');
-    tooltip.className = 'median-cagr-tooltip';
-    tooltip.textContent = text;
-    document.body.appendChild(tooltip);
-    return tooltip;
-  }
-
   function createPointerIndicator(): HTMLDivElement {
     const existingIndicators = document.querySelectorAll<HTMLDivElement>('.cagr-pointer-indicator');
     if (existingIndicators.length > 0) {
@@ -20,48 +12,33 @@
         }
       });
       const indicator = existingIndicators[0];
-      indicator.innerHTML = `<span class="cagr-pointer-icon" aria-hidden="true">🧮</span>`;
+      indicator.innerHTML = `<span class="cagr-pointer-icon" aria-hidden="true"></span>`;
       return indicator;
     }
 
     const indicator = document.createElement('div');
     indicator.className = 'cagr-pointer-indicator';
-    indicator.innerHTML = `<span class="cagr-pointer-icon" aria-hidden="true">🧮</span>`;
+    indicator.innerHTML = `<span class="cagr-pointer-icon" aria-hidden="true"></span>`;
     document.body.appendChild(indicator);
     return indicator;
   }
 
   const style = document.createElement('style');
   style.textContent = `
-    .median-cagr-tooltip {
-      position: absolute;
-      background: rgba(0, 0, 0, 0.9);
-      color: white;
-      padding: 6px 10px;
-      border-radius: 4px;
-      font-size: 13px;
-      pointer-events: none;
-      z-index: 10000;
-      max-width: 300px;
-      word-wrap: break-word;
-    }
     tr.clickable-row {
       cursor: default;
     }
     .cagr-highlight-cell {
-      background-color: rgba(255, 235, 59, 0.45) !important;
+      background-color: rgba(255, 235, 59, 0.35) !important;
     }
     .cagr-pointer-indicator {
       position: absolute;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 4px 6px;
+      width: 10px;
+      height: 10px;
       border-radius: 999px;
-      background: rgba(0, 0, 0, 0.72);
-      color: #fefefe;
-      font-size: 11px;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: rgba(255, 255, 255, 0.65);
+      border: 2px solid rgba(22, 163, 74, 0.8);
+      box-shadow: 0 0 4px rgba(15, 118, 110, 0.48);
       pointer-events: none;
       z-index: 10001;
       opacity: 0;
@@ -69,10 +46,6 @@
     }
     .cagr-pointer-indicator.is-visible {
       opacity: 1;
-    }
-    .cagr-pointer-icon {
-      font-size: 12px;
-      line-height: 1;
     }
   `;
   document.head.appendChild(style);
@@ -180,8 +153,6 @@
     return Math.pow(endValue / startValue, 1 / n) - 1;
   }
 
-  let activeTooltip: HTMLDivElement | null = null;
-  let activeTooltipRow: HTMLTableRowElement | null = null;
   let activeHighlightCells: HTMLElement[] = [];
   let isExtensionActive = true;
 
@@ -239,49 +210,8 @@
     });
   }
 
-  function hideActiveTooltip(): void {
+  function resetHoverArtifacts(): void {
     clearActiveHighlight();
-
-    const tooltips = document.querySelectorAll<HTMLElement>('.median-cagr-tooltip');
-    tooltips.forEach((tooltip) => tooltip.remove());
-
-    activeTooltip = null;
-    activeTooltipRow = null;
-  }
-
-  function positionTooltip(tooltip: HTMLDivElement, event: MouseEvent): void {
-    const horizontalOffset = 12;
-    const verticalOffset = 12;
-    const cursorX = event.clientX + window.scrollX;
-    const cursorY = event.clientY + window.scrollY;
-
-    let left = cursorX + horizontalOffset;
-    let top = cursorY - tooltip.offsetHeight - verticalOffset;
-
-    const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
-    const viewportHeight = document.documentElement.clientHeight || window.innerHeight;
-    const maxLeft = window.scrollX + viewportWidth - tooltip.offsetWidth - horizontalOffset;
-    const minLeft = window.scrollX + horizontalOffset;
-    const clampedMaxLeft = Math.max(minLeft, maxLeft);
-
-    if (left > clampedMaxLeft) {
-      left = clampedMaxLeft;
-    }
-
-    const minTop = window.scrollY + verticalOffset;
-    const maxTop = window.scrollY + viewportHeight - tooltip.offsetHeight - verticalOffset;
-    const clampedMaxTop = Math.max(minTop, maxTop);
-
-    if (top < minTop) {
-      top = cursorY + verticalOffset;
-    }
-
-    if (top > clampedMaxTop) {
-      top = clampedMaxTop;
-    }
-
-    tooltip.style.left = `${left}px`;
-    tooltip.style.top = `${top}px`;
   }
 
   function positionPointer(event: MouseEvent | PointerEvent): void {
@@ -301,7 +231,7 @@
     if (!isExtensionActive) return;
     isExtensionActive = false;
     pointerIndicator.classList.remove('is-visible');
-    hideActiveTooltip();
+    resetHoverArtifacts();
     document.removeEventListener('mousemove', positionPointer as EventListener);
   }
 
@@ -345,19 +275,11 @@
 
       const median = calculateMedian(numericalValues);
       const cagr = calculateCAGR(numericalValues);
-      const medianText = median !== null ? `Median: ${median.toFixed(2)}` : 'Median: N/A';
-      const cagrText = cagr !== null ? `CAGR: ${(cagr * 100).toFixed(2)}%` : 'CAGR: N/A';
-      const tooltipText = `${medianText}\n${cagrText}`;
 
       row.addEventListener('mouseenter', (event) => {
         if (!isExtensionActive) return;
 
-        hideActiveTooltip();
-
-        const tooltip = createTooltip(tooltipText);
-        activeTooltip = tooltip;
-        activeTooltipRow = row;
-        positionTooltip(tooltip, event);
+        resetHoverArtifacts();
         applyHighlight(rowHighlightCells);
         positionPointer(event);
 
@@ -372,14 +294,11 @@
 
       row.addEventListener('mousemove', (event) => {
         if (!isExtensionActive) return;
-        if (activeTooltip && activeTooltipRow === row) {
-          positionTooltip(activeTooltip, event);
-        }
         positionPointer(event);
       });
 
       row.addEventListener('mouseleave', () => {
-        hideActiveTooltip();
+        resetHoverArtifacts();
       });
     }
   });
