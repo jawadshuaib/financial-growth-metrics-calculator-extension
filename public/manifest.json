@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Table Row Median and CAGR Calculator",
+  "version": "1.0.0",
+  "description": "Calculates the median and CAGR of numerical values in each table row and displays the results inline.",
+  "permissions": ["scripting", "activeTab", "storage"],
+  "host_permissions": ["https://www.e-falah.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  }
+}
