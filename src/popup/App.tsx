@@ -12,6 +12,7 @@ type HoverMessagePayload = {
   initialValue: number | null;
   finalValue: number | null;
   compoundRate: number | null;
+  medianValue: number | null;
 };
 
 type HoverDetails = HoverMessagePayload & {
@@ -86,6 +87,7 @@ function App() {
           initialValue: typeof payload.initialValue === 'number' ? payload.initialValue : null,
           finalValue: typeof payload.finalValue === 'number' ? payload.finalValue : null,
           compoundRate: typeof payload.compoundRate === 'number' ? payload.compoundRate : null,
+          medianValue: typeof payload.medianValue === 'number' ? payload.medianValue : null,
           receivedAt: Date.now(),
         });
       }
@@ -103,6 +105,7 @@ function App() {
           initialValue: typeof newValue.initialValue === 'number' ? newValue.initialValue : null,
           finalValue: typeof newValue.finalValue === 'number' ? newValue.finalValue : null,
           compoundRate: typeof newValue.compoundRate === 'number' ? newValue.compoundRate : null,
+          medianValue: typeof newValue.medianValue === 'number' ? newValue.medianValue : null,
           receivedAt: Date.now(),
         });
       }
@@ -141,6 +144,8 @@ function App() {
               typeof payload.finalValue === 'number' ? payload.finalValue : null,
             compoundRate:
               typeof payload.compoundRate === 'number' ? payload.compoundRate : null,
+            medianValue:
+              typeof payload.medianValue === 'number' ? payload.medianValue : null,
             receivedAt: Date.now(),
           });
         }
@@ -171,7 +176,7 @@ function App() {
   };
 
   return (
-    <div className="flex w-80 flex-col gap-6 rounded-xl bg-slate-900/80 px-6 py-6 shadow-xl shadow-black/30">
+    <div className="flex w-80 flex-col gap-6 bg-slate-900/80 px-6 py-6 shadow-xl shadow-black/30">
       <header>
         <h1 className="text-lg font-semibold tracking-tight text-slate-100">
           Hover to analyze
@@ -179,17 +184,16 @@ function App() {
         <p className="text-sm text-slate-300">
           Move your cursor across any financial table row to see its median and compound growth rate instantly.
         </p>
-      </header>
-      <section className="space-y-1 text-xs text-slate-400">
-        <p className="font-medium uppercase tracking-[0.18em] text-slate-500">Status</p>
-        {injection.status === 'idle' && <p>Ready.</p>}
-        {injection.status === 'injecting' && <p>Preparing tools…</p>}
-        {injection.status === 'success' && <p>All set—hover any row.</p>}
-        {injection.status === 'error' && (
-          <p className="text-rose-300">Could not connect ({injection.error ?? 'unknown error'}).</p>
+        {injection.status === 'injecting' && (
+          <p className="mt-2 text-xs text-slate-400">Preparing tools…</p>
         )}
-      </section>
-      <section className="rounded-lg border border-slate-800/60 bg-slate-900/70 p-4">
+        {injection.status === 'error' && (
+          <p className="mt-2 text-xs text-rose-300">
+            Could not connect ({injection.error ?? 'unknown error'}).
+          </p>
+        )}
+      </header>
+      <section className="bg-slate-900/70 p-4">
         <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
           Latest selection
         </p>
@@ -217,6 +221,12 @@ function App() {
               <dt className="text-slate-400">Compound rate</dt>
               <dd className="text-right font-medium text-emerald-300">
                 {formatRate(hoverDetails.compoundRate)}
+              </dd>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <dt className="text-slate-400">Median</dt>
+              <dd className="text-right font-medium text-slate-100">
+                {formatValue(hoverDetails.medianValue)}
               </dd>
             </div>
             <p className="pt-1 text-[10px] uppercase tracking-[0.24em] text-slate-500">

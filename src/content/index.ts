@@ -195,6 +195,7 @@
       initialValue: number | null;
       finalValue: number | null;
       compoundRate: number | null;
+      medianValue: number | null;
     };
   };
 
@@ -365,6 +366,7 @@
           initialValue: numericalValues[0] ?? null,
           finalValue: numericalValues[numericalValues.length - 1] ?? null,
           compoundRate: cagr,
+          medianValue: median,
         });
       });
 
