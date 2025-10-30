@@ -203,6 +203,7 @@
 	let activeTooltip = null;
 	let activeTooltipRow = null;
 	let activeHighlightCells = [];
+	let isExtensionActive = true;
 	const pointerIndicator = createPointerIndicator();
 	pointerIndicator.classList.add('is-visible');
 
@@ -275,15 +276,34 @@
 	}
 
 	function positionPointerIndicator(event) {
-		if (!pointerIndicator || !event) return;
+		if (!pointerIndicator) return;
+
+		if (!isExtensionActive || !event) {
+			pointerIndicator.classList.remove('is-visible');
+			return;
+		}
 
 		const indicatorOffsetX = 10;
 		const indicatorOffsetY = 14;
 		pointerIndicator.style.left = `${event.pageX + indicatorOffsetX}px`;
 		pointerIndicator.style.top = `${event.pageY + indicatorOffsetY}px`;
+		pointerIndicator.classList.add('is-visible');
 	}
 
 	document.addEventListener('mousemove', positionPointerIndicator, { passive: true });
+
+	function disableExtension() {
+		if (!isExtensionActive) return;
+
+		isExtensionActive = false;
+		pointerIndicator.classList.remove('is-visible');
+		hideActiveTooltip();
+		document.removeEventListener('mousemove', positionPointerIndicator);
+	}
+
+	document.addEventListener('contextmenu', () => {
+		disableExtension();
+	}, { once: true });
 
 	// Find all <tr> elements
 	const rows = document.querySelectorAll('tr');
@@ -328,20 +348,24 @@
 			const cagrText = cagr !== null ? `CAGR: ${(cagr * 100).toFixed(2)}%` : 'CAGR: N/A';
 			const tooltipText = `${medianText}\n${cagrText}`;
 
-				row.addEventListener('mouseenter', (event) => {
-					hideActiveTooltip();
+			row.addEventListener('mouseenter', (event) => {
+				if (!isExtensionActive) return;
 
-					const tooltip = createTooltip(tooltipText);
-					activeTooltip = tooltip;
-					activeTooltipRow = row;
-					positionTooltip(tooltip, event);
-					applyHighlight(rowHighlightCells);
+				hideActiveTooltip();
 
-					pointerIndicator.classList.add('is-visible');
-					positionPointerIndicator(event);
-				});
+				const tooltip = createTooltip(tooltipText);
+				activeTooltip = tooltip;
+				activeTooltipRow = row;
+				positionTooltip(tooltip, event);
+				applyHighlight(rowHighlightCells);
+
+				pointerIndicator.classList.add('is-visible');
+				positionPointerIndicator(event);
+			});
 
 			row.addEventListener('mousemove', (event) => {
+				if (!isExtensionActive) return;
+
 				if (activeTooltip && activeTooltipRow === row) {
 					positionTooltip(activeTooltip, event);
 				}
