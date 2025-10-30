@@ -170,25 +170,32 @@
     };
   };
 
+  function isRuntimeAvailable(): boolean {
+    return typeof chrome !== 'undefined' && !!chrome.runtime?.id;
+  }
+
   function emitHoverData(payload: HoverPayload['payload']): void {
-    if (!isExtensionActive) return;
+    if (!isExtensionActive || !isRuntimeAvailable()) {
+      return;
+    }
+
     try {
       const message: HoverPayload = { type: 'ROW_HOVER_DATA', payload };
       chrome.runtime.sendMessage(message, () => {
-        if (chrome.runtime.lastError) {
-          console.warn('Unable to deliver hover data message:', chrome.runtime.lastError.message);
-        }
+        // Silently ignore missing receivers / closed ports
+        void chrome.runtime?.lastError;
       });
     } catch (error) {
-      console.warn('Unable to send hover data:', error);
+      // Extension context might be invalidated; ignore to avoid console noise
+      return;
     }
 
     if (chrome.storage?.local) {
-      chrome.storage.local.set({ lastHoverData: payload }, () => {
-        if (chrome.runtime.lastError) {
-          console.warn('Failed to cache hover data:', chrome.runtime.lastError.message);
-        }
-      });
+      try {
+        chrome.storage.local.set({ lastHoverData: payload });
+      } catch (_error) {
+        // Ignore storage errors caused by context invalidation
+      }
     }
   }
 

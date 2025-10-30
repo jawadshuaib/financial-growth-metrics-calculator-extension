@@ -230,7 +230,7 @@ function App() {
               </dd>
             </div>
             <p className="pt-1 text-[10px] uppercase tracking-[0.24em] text-slate-500">
-              Updated {new Date(hoverDetails.receivedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              Updated {new Date(hoverDetails.receivedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </p>
           </dl>
         ) : (
