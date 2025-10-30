@@ -6,17 +6,41 @@
 		return !isNaN(parseFloat(value)) && isFinite(value);
 	}
 
-	// Function to create a tooltip
-	function createTooltip(text) {
-		const tooltip = document.createElement('div');
-		tooltip.className = 'median-cagr-tooltip';
-		tooltip.textContent = text;
-		document.body.appendChild(tooltip);
-		return tooltip;
-	}
+		// Function to create a tooltip
+		function createTooltip(text) {
+			const tooltip = document.createElement('div');
+			tooltip.className = 'median-cagr-tooltip';
+			tooltip.textContent = text;
+			document.body.appendChild(tooltip);
+			return tooltip;
+		}
 
-	// Style for the tooltip
-	const style = document.createElement('style');
+		function createPointerIndicator() {
+			const existingIndicators = document.querySelectorAll('.cagr-pointer-indicator');
+			if (existingIndicators.length) {
+				existingIndicators.forEach((node, index) => {
+					if (index > 0) {
+						node.remove();
+					}
+				});
+				const indicator = existingIndicators[0];
+				indicator.innerHTML = `
+					<span class="cagr-pointer-icon" aria-hidden="true">🧮</span>
+				`;
+				return indicator;
+			}
+
+			const indicator = document.createElement('div');
+			indicator.className = 'cagr-pointer-indicator';
+			indicator.innerHTML = `
+				<span class="cagr-pointer-icon" aria-hidden="true">🧮</span>
+			`;
+			document.body.appendChild(indicator);
+			return indicator;
+		}
+
+		// Style for the tooltip
+		const style = document.createElement('style');
 	style.textContent = `
     .median-cagr-tooltip {
       position: absolute;
@@ -35,6 +59,30 @@
     }
     .cagr-highlight-cell {
       background-color: rgba(255, 235, 59, 0.45) !important;
+    }
+    .cagr-pointer-indicator {
+      position: absolute;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 6px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.72);
+      color: #fefefe;
+      font-size: 11px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      pointer-events: none;
+      z-index: 10001;
+      transform: translate(0, 0);
+      opacity: 0;
+      transition: opacity 120ms ease;
+    }
+    .cagr-pointer-indicator.is-visible {
+      opacity: 1;
+    }
+    .cagr-pointer-icon {
+      font-size: 12px;
+      line-height: 1;
     }
   `;
 	document.head.appendChild(style);
@@ -155,6 +203,8 @@
 	let activeTooltip = null;
 	let activeTooltipRow = null;
 	let activeHighlightCells = [];
+	const pointerIndicator = createPointerIndicator();
+	pointerIndicator.classList.add('is-visible');
 
 	function clearActiveHighlight() {
 		const highlightedCells = document.querySelectorAll('.cagr-highlight-cell');
@@ -224,6 +274,17 @@
 		tooltip.style.top = `${top}px`;
 	}
 
+	function positionPointerIndicator(event) {
+		if (!pointerIndicator || !event) return;
+
+		const indicatorOffsetX = 10;
+		const indicatorOffsetY = 14;
+		pointerIndicator.style.left = `${event.pageX + indicatorOffsetX}px`;
+		pointerIndicator.style.top = `${event.pageY + indicatorOffsetY}px`;
+	}
+
+	document.addEventListener('mousemove', positionPointerIndicator, { passive: true });
+
 	// Find all <tr> elements
 	const rows = document.querySelectorAll('tr');
 
@@ -267,20 +328,24 @@
 			const cagrText = cagr !== null ? `CAGR: ${(cagr * 100).toFixed(2)}%` : 'CAGR: N/A';
 			const tooltipText = `${medianText}\n${cagrText}`;
 
-			row.addEventListener('mouseenter', (event) => {
-				hideActiveTooltip();
+				row.addEventListener('mouseenter', (event) => {
+					hideActiveTooltip();
 
-				const tooltip = createTooltip(tooltipText);
-				activeTooltip = tooltip;
-				activeTooltipRow = row;
-				positionTooltip(tooltip, event);
-				applyHighlight(rowHighlightCells);
-			});
+					const tooltip = createTooltip(tooltipText);
+					activeTooltip = tooltip;
+					activeTooltipRow = row;
+					positionTooltip(tooltip, event);
+					applyHighlight(rowHighlightCells);
+
+					pointerIndicator.classList.add('is-visible');
+					positionPointerIndicator(event);
+				});
 
 			row.addEventListener('mousemove', (event) => {
 				if (activeTooltip && activeTooltipRow === row) {
 					positionTooltip(activeTooltip, event);
 				}
+				positionPointerIndicator(event);
 			});
 
 			row.addEventListener('mouseleave', hideActiveTooltip);
