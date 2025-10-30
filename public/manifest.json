@@ -1,13 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Table Row Median and CAGR Calculator",
+  "name": "Financial Growth Metrics Calculator",
   "version": "1.0.0",
-  "description": "Calculates the median and CAGR of numerical values in each table row and displays the results inline.",
+  "description": "Hover any financial table to instantly calculate compound annual growth rates (CAGR) and median values for each row, with results surfaced in a convenient popup dashboard.",
   "permissions": ["scripting", "activeTab", "storage"],
-  "host_permissions": ["https://www.e-falah.com/*"],
-  "background": {
-    "service_worker": "background.js"
-  },
   "action": {
     "default_popup": "popup.html"
   }
