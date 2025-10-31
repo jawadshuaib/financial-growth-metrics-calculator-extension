@@ -238,9 +238,11 @@ function App() {
         </div>
       </header>
       <div className="flex flex-col gap-5 px-6 py-5">
-        <p className="text-sm text-slate-600">
-          Hover across any financial table row to capture the latest median and compound growth rates in real time.
-        </p>
+        {!hoverDetails ? (
+          <p className="text-sm text-slate-600">
+            Hover across any financial table row to capture the latest median and compound growth rates in real time.
+          </p>
+        ) : null}
         <section className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
             Latest selection
@@ -278,9 +280,6 @@ function App() {
                     {formatValue(hoverDetails.medianValue)}
                   </dd>
                 </div>
-                <p className="pt-1 text-[10px] uppercase tracking-[0.24em] text-slate-400">
-                  Updated {new Date(hoverDetails.receivedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </p>
               </dl>
               {barChartData.length > 0 ? (
                 <div className="space-y-3">
@@ -310,11 +309,7 @@ function App() {
                                   style={{ height: `${barHeight}%` }}
                                 />
                               </div>
-                              <div className="flex flex-col items-center">
-                                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-                                  {item.label}
-                                </p>
-                              </div>
+                              <div className="h-3" />
                             </div>
                           );
                         })}
@@ -323,6 +318,9 @@ function App() {
                   </div>
                 </div>
               ) : null}
+              <p className="text-right text-[10px] uppercase tracking-[0.24em] text-slate-400">
+                Updated {new Date(hoverDetails.receivedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </p>
             </div>
           ) : (
             <p className="mt-3 text-sm text-slate-500">
