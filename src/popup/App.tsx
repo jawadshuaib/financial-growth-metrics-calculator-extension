@@ -288,9 +288,9 @@ function App() {
                     Value trend
                   </p>
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 py-3">
-                    <div className="relative h-36 overflow-x-auto px-3">
+                    <div className="relative h-36 px-3">
                       <div className="absolute bottom-6 left-3 right-3 h-px bg-slate-300" />
-                      <div className="flex h-full min-w-full items-end gap-3">
+                      <div className="flex h-full w-full items-end gap-1">
                         {barChartData.map((item) => {
                           const effectiveMax = barChartMax === 0 ? 1 : barChartMax;
                           const heightRatio = Math.abs(item.value) / effectiveMax;
@@ -299,8 +299,8 @@ function App() {
                           return (
                             <div
                               key={item.key}
-                              className="flex min-w-[36px] flex-1 flex-col items-center gap-2"
-                              style={{ height: '100%' }}
+                              className="flex flex-1 flex-col items-center gap-1"
+                              style={{ height: '100%', minWidth: 0 }}
                             >
                               <div className="flex w-full flex-1 items-end">
                                 <div
