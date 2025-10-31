@@ -13,6 +13,7 @@ type HoverMessagePayload = {
   finalValue: number | null;
   compoundRate: number | null;
   medianValue: number | null;
+  seriesValues: number[];
 };
 
 type HoverDetails = HoverMessagePayload & {
@@ -94,6 +95,11 @@ function App() {
           finalValue: typeof payload.finalValue === 'number' ? payload.finalValue : null,
           compoundRate: typeof payload.compoundRate === 'number' ? payload.compoundRate : null,
           medianValue: typeof payload.medianValue === 'number' ? payload.medianValue : null,
+          seriesValues: Array.isArray(payload.seriesValues)
+            ? payload.seriesValues.filter((value): value is number =>
+                typeof value === 'number' && Number.isFinite(value),
+              )
+            : [],
           receivedAt: Date.now(),
         });
       }
@@ -112,6 +118,11 @@ function App() {
           finalValue: typeof newValue.finalValue === 'number' ? newValue.finalValue : null,
           compoundRate: typeof newValue.compoundRate === 'number' ? newValue.compoundRate : null,
           medianValue: typeof newValue.medianValue === 'number' ? newValue.medianValue : null,
+          seriesValues: Array.isArray(newValue.seriesValues)
+            ? newValue.seriesValues.filter((value): value is number =>
+                typeof value === 'number' && Number.isFinite(value),
+              )
+            : [],
           receivedAt: Date.now(),
         });
       }
@@ -152,6 +163,11 @@ function App() {
               typeof payload.compoundRate === 'number' ? payload.compoundRate : null,
             medianValue:
               typeof payload.medianValue === 'number' ? payload.medianValue : null,
+            seriesValues: Array.isArray(payload.seriesValues)
+              ? payload.seriesValues.filter((value): value is number =>
+                  typeof value === 'number' && Number.isFinite(value),
+                )
+              : [],
             receivedAt: Date.now(),
           });
         }
@@ -181,77 +197,141 @@ function App() {
     return `${formatter.format(value * 100)}%`;
   };
 
+  const barChartData = useMemo(() => {
+    if (!hoverDetails) return [] as Array<{ key: string; label: string; value: number }>;
+
+    if (!Array.isArray(hoverDetails.seriesValues) || hoverDetails.seriesValues.length === 0) {
+      return [] as Array<{ key: string; label: string; value: number }>;
+    }
+
+    return hoverDetails.seriesValues
+      .filter((value): value is number => typeof value === 'number' && !Number.isNaN(value))
+      .map((value, index) => ({
+        key: `series-${index}`,
+        label: `${index + 1}`,
+        value,
+      }));
+  }, [hoverDetails]);
+
+  const barChartMax = useMemo(
+    () => barChartData.reduce((max, item) => Math.max(max, Math.abs(item.value)), 0),
+    [barChartData],
+  );
+
   return (
-    <div className="flex w-80 flex-col bg-slate-950 text-slate-100 shadow-xl shadow-black/30">
-      <header className="flex items-center justify-between border-b border-slate-800/70 px-5 py-4">
+    <div className="flex w-80 flex-col rounded-3xl bg-white text-slate-900 shadow-2xl shadow-slate-300/50">
+      <header className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 shadow-inner shadow-black/40 ring-1 ring-slate-700/60">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 shadow-inner shadow-slate-300/40 ring-1 ring-slate-200">
             {iconSrc ? (
               <img src={iconSrc} alt="Extension icon" className="h-7 w-7" />
             ) : (
-              <span className="text-lg font-semibold">FG</span>
+              <span className="text-lg font-semibold text-emerald-600">FG</span>
             )}
           </div>
           <div className="leading-tight">
-            <h1 className="text-lg font-semibold tracking-tight text-white">Financial Growth Metrics</h1>
-            <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-emerald-200/80">
+            <h1 className="text-lg font-semibold tracking-tight text-slate-900">Financial Growth Metrics</h1>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-emerald-600/90">
               Hover for CAGR & median
             </p>
           </div>
         </div>
       </header>
       <div className="flex flex-col gap-5 px-6 py-5">
-        <p className="text-sm text-slate-300">
+        <p className="text-sm text-slate-600">
           Hover across any financial table row to capture the latest median and compound growth rates in real time.
         </p>
-        <section className="bg-slate-900/60 p-4">
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-          Latest selection
-        </p>
-        {hoverDetails ? (
-          <dl className="mt-3 space-y-2 text-sm text-slate-200">
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-slate-400">Metric</dt>
-              <dd className="text-right font-medium text-slate-100">
-                {hoverDetails.metricName || 'Metric'}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-slate-400">Initial</dt>
-              <dd className="text-right font-medium text-slate-100">
-                {formatValue(hoverDetails.initialValue)}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-slate-400">Final</dt>
-              <dd className="text-right font-medium text-slate-100">
-                {formatValue(hoverDetails.finalValue)}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-slate-400">Compound rate</dt>
-              <dd className="text-right font-medium text-emerald-300">
-                {formatRate(hoverDetails.compoundRate)}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-slate-400">Median</dt>
-              <dd className="text-right font-medium text-slate-100">
-                {formatValue(hoverDetails.medianValue)}
-              </dd>
-            </div>
-            <p className="pt-1 text-[10px] uppercase tracking-[0.24em] text-slate-500">
-              Updated {new Date(hoverDetails.receivedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </p>
-          </dl>
-        ) : (
-          <p className="mt-3 text-sm text-slate-400">
-            Hover a table row to populate the latest metrics.
+        <section className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+            Latest selection
           </p>
-        )}
+          {hoverDetails ? (
+            <div className="mt-3 space-y-4 text-sm text-slate-700">
+              <dl className="space-y-2">
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-slate-500">Metric</dt>
+                  <dd className="text-right font-semibold text-slate-900">
+                    {hoverDetails.metricName || 'Metric'}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-slate-500">Initial</dt>
+                  <dd className="text-right font-medium text-slate-900">
+                    {formatValue(hoverDetails.initialValue)}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-slate-500">Final</dt>
+                  <dd className="text-right font-medium text-slate-900">
+                    {formatValue(hoverDetails.finalValue)}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-slate-500">Compound rate</dt>
+                  <dd className="text-right font-semibold text-emerald-600">
+                    {formatRate(hoverDetails.compoundRate)}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-slate-500">Median</dt>
+                  <dd className="text-right font-medium text-slate-900">
+                    {formatValue(hoverDetails.medianValue)}
+                  </dd>
+                </div>
+                <p className="pt-1 text-[10px] uppercase tracking-[0.24em] text-slate-400">
+                  Updated {new Date(hoverDetails.receivedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </dl>
+              {barChartData.length > 0 ? (
+                <div className="space-y-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
+                    Value trend
+                  </p>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 py-3">
+                    <div className="relative h-36 overflow-x-auto px-3">
+                      <div className="absolute bottom-6 left-3 right-3 h-px bg-slate-300" />
+                      <div className="flex h-full min-w-full items-end gap-3">
+                        {barChartData.map((item) => {
+                          const effectiveMax = barChartMax === 0 ? 1 : barChartMax;
+                          const heightRatio = Math.abs(item.value) / effectiveMax;
+                          const barHeight = Math.min(100, Math.max(8, heightRatio * 100));
+                          const isPositive = item.value >= 0;
+                          return (
+                            <div
+                              key={item.key}
+                              className="flex min-w-[36px] flex-1 flex-col items-center gap-2"
+                              style={{ height: '100%' }}
+                            >
+                              <div className="flex w-full flex-1 items-end">
+                                <div
+                                  className={`w-full rounded-t-lg ${
+                                    isPositive ? 'bg-emerald-500' : 'bg-rose-400'
+                                  }`}
+                                  style={{ height: `${barHeight}%` }}
+                                />
+                              </div>
+                              <div className="flex flex-col items-center">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400">
+                                  {item.label}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <p className="mt-3 text-sm text-slate-500">
+              Hover a table row to populate the latest metrics.
+            </p>
+          )}
         </section>
         {injection.status === 'error' && (
-          <p className="text-xs text-rose-300/90">
+          <p className="text-xs text-rose-500">
             Could not connect ({injection.error ?? 'unknown error'}). Try refreshing the target tab and reopening this popup.
           </p>
         )}
